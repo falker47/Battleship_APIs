@@ -52,33 +52,20 @@ namespace Battleship_APIs.Controllers
             return Ok(player);
         }
 
-        //// POST: api/Players
-        //[HttpPost("setPlayers")]
-        //public async Task<ActionResult<Player>> PostPlayer(Player player)
-        //{
-        //  if (_context.Players == null)
-        //  {
-        //      return Problem("Entity set 'BattleshipDbContext.Players'  is null.");
-        //  }
-        //    _context.Players.Add(player);
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //    }
-        //    catch (DbUpdateException)
-        //    {
-        //        if (PlayerExists(player.Id))
-        //        {
-        //            return Conflict();
-        //        }
-        //        else
-        //        {
-        //            throw;
-        //        }
-        //    }
+        //TODO reset dati tabella
+        [HttpPost("setPlayers")]
+        public async Task<ActionResult<Player>> PostPlayer(List<NewGamePlayer> newGamePlayerList)
+        {
+            var newPlayer = await _context.Players.ToListAsync();
+            for (byte i = 0; i < (newGamePlayerList.Count); i++)
+            {
+                newPlayer[i].Name = newGamePlayerList[i].Name;
+                newPlayer[i].Team = newGamePlayerList[i].Team;
+                _context.SaveChanges();
+            }
 
-        //    return CreatedAtAction("GetPlayer", new { id = player.Id }, player);
-        //}
+            return Ok("Successfully added");
+        }
 
         private bool PlayerExists(byte id)
         {
