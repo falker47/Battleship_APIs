@@ -30,7 +30,7 @@ namespace Battleship_APIs.Controllers
             {
                 if (players[i].Name == null)
                 {
-                    return BadRequest("Cannot continue with empty name");
+                    break;
                 }
                 verifiedPlayers.Add(players[i]);
             }
@@ -96,7 +96,7 @@ namespace Battleship_APIs.Controllers
 
                         Ship attackedShip = Hit(attackingPlayer, attackedCell, attackedPlayer);
 
-                        ResponseMessage += $"The ship of {attackedPlayer.Name} has been hit! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left; "; m
+                        ResponseMessage += $"The ship of {attackedPlayer.Name} has been hit! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left; ";
                     }
 
                     //MISS!
