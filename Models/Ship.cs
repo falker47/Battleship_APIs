@@ -13,5 +13,7 @@ public partial class Ship
 
     public byte Hp { get; set; }
 
+    public virtual ICollection<Cell> Cells { get; set; } = new List<Cell>();
+
     public virtual Player Player { get; set; } = null!;
 }

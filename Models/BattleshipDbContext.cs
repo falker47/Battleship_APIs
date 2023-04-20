@@ -1,10 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace Battleship_APIs.Models;
 
 public partial class BattleshipDbContext : DbContext
 {
-
     public BattleshipDbContext()
     {
     }
@@ -22,11 +23,9 @@ public partial class BattleshipDbContext : DbContext
 
     public virtual DbSet<Ship> Ships { get; set; }
 
-    public virtual DbSet<ShipCell> ShipCells { get; set; }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost;Database=BattleshipDB;Trusted_Connection=True; TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=localhost; Database=BattleshipDB; Trusted_Connection=True; TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +37,7 @@ public partial class BattleshipDbContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("ID");
             entity.Property(e => e.GridId).HasColumnName("GridID");
+            entity.Property(e => e.ShipId).HasColumnName("ShipID");
             entity.Property(e => e.Xaxis).HasColumnName("XAxis");
             entity.Property(e => e.Yaxis).HasColumnName("YAxis");
 
@@ -45,6 +45,10 @@ public partial class BattleshipDbContext : DbContext
                 .HasForeignKey(d => d.GridId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Cell_Grid");
+
+            entity.HasOne(d => d.Ship).WithMany(p => p.Cells)
+                .HasForeignKey(d => d.ShipId)
+                .HasConstraintName("FK_Cells_Ships");
         });
 
         modelBuilder.Entity<Grid>(entity =>
@@ -91,24 +95,6 @@ public partial class BattleshipDbContext : DbContext
                 .HasForeignKey(d => d.PlayerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Ship_Player");
-        });
-
-        modelBuilder.Entity<ShipCell>(entity =>
-        {
-            entity.HasNoKey();
-
-            entity.Property(e => e.CellId).HasColumnName("Cell_ID");
-            entity.Property(e => e.ShipId).HasColumnName("ShipID");
-
-            entity.HasOne(d => d.Cell).WithMany()
-                .HasForeignKey(d => d.CellId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ShipCell_Cell");
-
-            entity.HasOne(d => d.Ship).WithMany()
-                .HasForeignKey(d => d.ShipId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ShipCell_Ship");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -91,7 +91,7 @@ namespace Battleship_APIs.Controllers
             for (byte id = 0; id < 12; id++)
             {
             var cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
-            cells.ForEach(cell => cell.State = 0);
+            cells.ForEach(cell => { cell.State = 0; cell.ShipId = null; });
             _context.SaveChanges();
             }
             return Ok();
