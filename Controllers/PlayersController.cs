@@ -19,14 +19,14 @@ namespace Battleship_APIs.Controllers
         [HttpGet("getPlayers")]
         public async Task<ActionResult<IEnumerable<Player>>> GetPlayers()
         {
-          if (_context.Players == null)
-          {
-              return NotFound();
-          }
+            if (_context.Players == null)
+            {
+                return NotFound();
+            }
             var players = await _context.Players.ToListAsync();
             var verifiedPlayers = new List<Player>();
 
-            for (int i = 0; i< players.Count; i++)
+            for (int i = 0; i < players.Count; i++)
             {
                 if (players[i].Name == null)
                 {
@@ -40,10 +40,10 @@ namespace Battleship_APIs.Controllers
         [HttpGet("getPlayer/{id}")]
         public async Task<ActionResult<Player>> GetPlayer(byte id)
         {
-          if (_context.Players == null)
-          {
-              return NotFound();
-          }
+            if (_context.Players == null)
+            {
+                return NotFound();
+            }
             var player = await _context.Players.FindAsync(id);
 
             if (player == null || player.Name == null)
@@ -51,6 +51,17 @@ namespace Battleship_APIs.Controllers
                 return NotFound();
             }
             return Ok(player);
+        }
+
+        [HttpGet("getShipsByPlayerId/{id}")]
+        public async Task<ActionResult<Ship>> GetShipsByPlayerId(byte id)
+        {
+            if (_context.Ships == null)
+            {
+                return NotFound();
+            }
+            var ships = await _context.Ships.Where(ship => ship.PlayerId == id).ToListAsync();
+            return Ok(ships);
         }
 
         [HttpPost("createGame")]
@@ -72,15 +83,15 @@ namespace Battleship_APIs.Controllers
         [HttpPost("placeShips")]
         public async Task<ActionResult<Ship>> PlaceShip(PlayerShips playerShips)
         {
-            var playerGrid = await _context.Grids.Where(grid => grid.PlayerId == playerShips.PlayerId).FirstAsync();
-            var playerGridCells = await _context.Cells.Where(cell => cell.GridId == playerGrid.Id).ToListAsync();
-            var ships = await _context.Ships.Where(ship => ship.PlayerId == playerShips.PlayerId).ToListAsync();
-            var j = 0;
+            Player player = await _context.Players.Where(player => player.Id == playerShips.PlayerId).FirstAsync();
+            List<Cell> playerGridCells = await _context.Cells.Where(cell => cell.GridId == player.UserGridId).ToListAsync();
+            List<Ship> ships = await _context.Ships.Where(ship => ship.PlayerId == playerShips.PlayerId).ToListAsync();
+            int j = 0;
             playerShips.PlayerShipsPosition.ForEach(playerShip =>
             {
                 for (int i = 0; i < playerShip.Count(); i++)
                 {
-                    var positionCell = playerGridCells.Where(cell => cell.Xaxis == playerShip[i].X && cell.Yaxis == playerShip[i].Y).First();
+                    Cell positionCell = playerGridCells.Where(cell => cell.Xaxis == playerShip[i].X && cell.Yaxis == playerShip[i].Y).First();
                     positionCell.State = 1;
                     positionCell.ShipId = ships[j].Id;
                 }
