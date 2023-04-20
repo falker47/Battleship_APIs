@@ -71,7 +71,7 @@ namespace Battleship_APIs.Controllers
 
         // --------------  Game mechanics   -------------- //
 
-        [HttpGet("shot/{id}/{xAxis}/{yAxis}")]
+        [HttpPost("shot/{id}/{xAxis}/{yAxis}")]
         public async Task<ActionResult<Player>> Shot(byte id, byte xAxis, byte yAxis)
         {
             Player attackingPlayer = await GetObjectPlayer(id);
@@ -101,8 +101,10 @@ namespace Battleship_APIs.Controllers
 
                     //MISS!
                     else
-                    Miss(attackingPlayer, attackedCell, attackedPlayer);
-                    ResponseMessage += $"The ship of {attackedPlayer.Name} has been missed!;";
+                    {
+                        Miss(attackingPlayer, attackedCell, attackedPlayer);
+                        ResponseMessage += $"The ship of {attackedPlayer.Name} has been missed!;";
+                    }
                     
                 }
 
