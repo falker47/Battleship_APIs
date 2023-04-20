@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Battleship_APIs.Models;
+using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 
 namespace Battleship_APIs.Controllers
 {
@@ -66,6 +67,29 @@ namespace Battleship_APIs.Controllers
             }
 
             return Ok("Successfully added");
+        }
+
+        [HttpPost("placeShips")]
+        public async Task<ActionResult<Ship>> PlaceShip(PlayerShips playerShips)
+        {
+            var playerGrid = await _context.Grids.Where(grid => grid.PlayerId == playerShips.PlayerId).FirstAsync();
+            var playerGridCells = await _context.Cells.Where(cell => cell.GridId == playerGrid.Id).ToListAsync();
+            var ships = await _context.Ships.Where(ship => ship.PlayerId == playerShips.PlayerId).ToListAsync();
+            var j = 0;
+            playerShips.PlayerShipsPosition.ForEach(playerShip =>
+            {
+                for (int i = 0; i < playerShip.Count(); i++)
+                {
+                    var positionCell = playerGridCells.Where(cell => cell.Xaxis == playerShip[i].X && cell.Yaxis == playerShip[i].Y).First();
+                    positionCell.State = 1;
+                    positionCell.ShipId = ships[j].Id;
+                }
+                ships[j].Length = (byte)playerShip.Count();
+                ships[j].Hp = (byte)playerShip.Count();
+                j++;
+            });
+            _context.SaveChanges();
+            return Ok("Successfully placed ships");
         }
 
         private async Task<ActionResult> resetGame()
