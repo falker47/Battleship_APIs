@@ -52,24 +52,49 @@ namespace Battleship_APIs.Controllers
             return Ok(player);
         }
 
-        //TODO reset dati tabella
-        [HttpPost("setPlayers")]
+        [HttpPost("createGame")]
         public async Task<ActionResult<Player>> PostPlayer(List<NewGamePlayer> newGamePlayerList)
         {
+            await this.resetGame();
+
             var newPlayer = await _context.Players.ToListAsync();
             for (byte i = 0; i < (newGamePlayerList.Count); i++)
-            {
+            {                
                 newPlayer[i].Name = newGamePlayerList[i].Name;
                 newPlayer[i].Team = newGamePlayerList[i].Team;
-                _context.SaveChanges();
+                _context.SaveChanges();               
             }
 
             return Ok("Successfully added");
         }
 
-        private bool PlayerExists(byte id)
+        private async Task<ActionResult> resetGame()
         {
-            return (_context.Players?.Any(e => e.Id == id)).GetValueOrDefault();
+            await this.resetPlayers();
+            await this.resetPlayersGrids();
+            return Ok();
+        }
+
+        private async Task<ActionResult> resetPlayers()
+        {
+            var players = await _context.Players.ToListAsync();
+            players.ForEach(p =>
+            {
+                p.Name = null;
+            });
+            _context.SaveChanges();
+            return Ok();
+        }
+
+        private async Task<ActionResult<Cell>> resetPlayersGrids()
+        {     
+            for (byte id = 0; id < 12; id++)
+            {
+            var cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
+            cells.ForEach(cell => cell.State = 0);
+            _context.SaveChanges();
+            }
+            return Ok();
         }
     }
 }
