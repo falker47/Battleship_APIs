@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Battleship_APIs.Models;
-using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 
 namespace Battleship_APIs.Controllers
 {
@@ -23,8 +22,8 @@ namespace Battleship_APIs.Controllers
             {
                 return NotFound();
             }
-            var players = await _context.Players.ToListAsync();
-            var verifiedPlayers = new List<Player>();
+            List<Player> players = await _context.Players.ToListAsync();
+            List<Player> verifiedPlayers = new List<Player>();
 
             for (int i = 0; i < players.Count; i++)
             {
@@ -44,7 +43,7 @@ namespace Battleship_APIs.Controllers
             {
                 return NotFound();
             }
-            var player = await _context.Players.FindAsync(id);
+            Player player = await _context.Players.FindAsync(id);
 
             if (player == null || player.Name == null)
             {
@@ -60,16 +59,16 @@ namespace Battleship_APIs.Controllers
             {
                 return NotFound();
             }
-            var ships = await _context.Ships.Where(ship => ship.PlayerId == id).ToListAsync();
+            List<Ship> ships = await _context.Ships.Where(ship => ship.PlayerId == id).ToListAsync();
             return Ok(ships);
         }
 
         [HttpPost("createGame")]
         public async Task<ActionResult<Player>> PostPlayer(List<NewGamePlayer> newGamePlayerList)
         {
-            await this.resetGame();
+            await this.ResetGame();
 
-            var newPlayer = await _context.Players.ToListAsync();
+            List<Player> newPlayer = await _context.Players.ToListAsync();
             for (byte i = 0; i < (newGamePlayerList.Count); i++)
             {                
                 newPlayer[i].Name = newGamePlayerList[i].Name;
@@ -103,16 +102,16 @@ namespace Battleship_APIs.Controllers
             return Ok("Successfully placed ships");
         }
 
-        private async Task<ActionResult> resetGame()
+        private async Task<ActionResult> ResetGame()
         {
-            await this.resetPlayers();
-            await this.resetPlayersGrids();
+            await this.ResetPlayers();
+            await this.ResetPlayersGrids();
             return Ok();
         }
 
-        private async Task<ActionResult> resetPlayers()
+        private async Task<ActionResult> ResetPlayers()
         {
-            var players = await _context.Players.ToListAsync();
+            List<Player> players = await _context.Players.ToListAsync();
             players.ForEach(p =>
             {
                 p.Name = null;
@@ -121,11 +120,11 @@ namespace Battleship_APIs.Controllers
             return Ok();
         }
 
-        private async Task<ActionResult<Cell>> resetPlayersGrids()
+        private async Task<ActionResult<Cell>> ResetPlayersGrids()
         {     
             for (byte id = 0; id < 12; id++)
             {
-            var cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
+            List<Cell> cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
             cells.ForEach(cell => { cell.State = 0; cell.ShipId = null; });
             _context.SaveChanges();
             }
