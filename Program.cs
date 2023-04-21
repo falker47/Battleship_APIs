@@ -7,6 +7,8 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var localConfig = new ConfigurationBuilder().SetBasePath(Environment.CurrentDirectory).AddJsonFile("appsettings.json", true, false).Build();
+
+        var pippo = 1;
         
         builder.Services.AddDbContext<BattleshipDbContext>(options => options.UseSqlServer(localConfig.GetConnectionString("localConnectionString")));
         builder.Services.AddControllers();
