@@ -71,61 +71,45 @@ namespace Battleship_APIs.Controllers
 
         // --------------  Game mechanics   -------------- //
 
-        [HttpPost("shot/{id}/{xAxis}/{yAxis}")]
+        [HttpPost("shot")]
         public async Task<ActionResult<Player>> Shot(byte id, byte xAxis, byte yAxis)
         {
             Player attackingPlayer = await GetObjectPlayer(id);
-
             int attackingTeam = attackingPlayer.Team;
-
             var ResponseMessage = "";
-
-            if (attackingPlayer != null && xAxis < 31 && yAxis < 31)
+            if (xAxis < 31 && yAxis < 31 && xAxis > 0 && yAxis > 0)
             {
                 List<Player> attackedPlayers = await _context.Players.Where(attackedPlayer => attackedPlayer.Team != attackingTeam && attackedPlayer.Name != null).ToListAsync();
-
                 foreach (Player attackedPlayer in attackedPlayers)
                 {
                     byte attackedGridId = attackedPlayer.UserGridId;
-
                     Cell attackedCell = _context.Cells.Where(aC => aC.GridId == attackedGridId && aC.Xaxis == xAxis && aC.Yaxis == yAxis).First();
-
-                    if (attackedCell != null && attackedCell.ShipId != null)
+                    if (attackedCell.State == 1)
                     {
-                        //HIT!
-
                         Ship attackedShip = Hit(attackingPlayer, attackedCell, attackedPlayer);
-
-                        ResponseMessage += $"The ship of {attackedPlayer.Name} has been hit! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left; ";
+                        ResponseMessage += $"{attackedPlayer.Name} - You hit a ship! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left; ";
                     }
-
-                    //MISS!
                     else
                     {
                         Miss(attackingPlayer, attackedCell, attackedPlayer);
-                        ResponseMessage += $"The ship of {attackedPlayer.Name} has been missed!;";
+                        ResponseMessage += $"{attackedPlayer.Name} - You either missed or hit an already hit spot!;";
                     }
-                    
                 }
-
-            } 
-            
-            return Ok(ResponseMessage);
-
+                return Ok(ResponseMessage);
+            }
+            else return BadRequest("Invalid cell");
         }
 
         private void Miss(Player attackingPlayer, Cell attackedCell, Player attackedPlayer)
         {
-            //Attacker
-
             Grid gridToEdit = _context.Grids.Where(eG => eG.Id == attackingPlayer.ShotGridId).First();
-
             Cell cellToEdit = _context.Cells.Where(eC => eC.GridId == gridToEdit.Id && eC.Xaxis == attackedCell.Xaxis && eC.Yaxis == attackedCell.Yaxis).First();
-
-            cellToEdit.State = 1;
-
+            if (cellToEdit.State == 2) 
+            {
+                return;
+            }
+            cellToEdit.State = 3;
             _context.SaveChanges();
-
         }
 
         private Ship Hit(Player attackingPlayer, Cell attackedCell, Player attackedPlayer)
@@ -133,27 +117,23 @@ namespace Battleship_APIs.Controllers
             //Attacker
 
             Grid gridToEdit = _context.Grids.Where(eG => eG.Id == attackingPlayer.ShotGridId).First();
-
             Cell cellToEdit = _context.Cells.Where(eC => eC.GridId == gridToEdit.Id && eC.Xaxis == attackedCell.Xaxis && eC.Yaxis == attackedCell.Yaxis).First();
-
-            cellToEdit.State = 3;
+            Ship attackedShip = _context.Ships.Where(aS => aS.Id == attackedCell.ShipId).First();
+            attackedShip.Hp--;
+            attackingPlayer.Points += 10;
+            if (attackedShip.Hp == 0)
+            {
+                attackingPlayer.Points += 5;
+            }
+            cellToEdit.State = 2;
 
             //Attacked
-
-            Ship attackedShip = _context.Ships.Where(aS => aS.Id == attackedCell.ShipId).First();
-
-            attackedShip.Hp--;
-
-            attackedCell.State = 3;
-
+            
+            
+            attackedCell.State = 2;
             _context.SaveChanges();
-
             return attackedShip;
-
         }
-
-
-
 
         private async Task<ActionResult> resetGame()
         {
@@ -194,15 +174,11 @@ namespace Battleship_APIs.Controllers
                 {
                     throw new ArgumentNullException("Player not found");
                 }
-
                 var player = await _context.Players.FindAsync(id);
-
                 if (player == null || player.Name == null)
                 {
                     throw new ArgumentNullException("Player not found, or without a name");
-
                 }
-
                 return (player);
             }
             catch
