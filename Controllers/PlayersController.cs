@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Battleship_APIs.Models;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Battleship_APIs.Controllers
 {
@@ -18,14 +19,14 @@ namespace Battleship_APIs.Controllers
         [HttpGet("getPlayers")]
         public async Task<ActionResult<IEnumerable<Player>>> GetPlayers()
         {
-          if (_context.Players == null)
-          {
-              return NotFound();
-          }
+            if (_context.Players == null)
+            {
+                return NotFound();
+            }
             var players = await _context.Players.ToListAsync();
             var verifiedPlayers = new List<Player>();
 
-            for (int i = 0; i< players.Count; i++)
+            for (int i = 0; i < players.Count; i++)
             {
                 if (players[i].Name == null)
                 {
@@ -39,10 +40,10 @@ namespace Battleship_APIs.Controllers
         [HttpGet("getPlayer/{id}")]
         public async Task<ActionResult<Player>> GetPlayer(byte id)
         {
-          if (_context.Players == null)
-          {
-              return NotFound();
-          }
+            if (_context.Players == null)
+            {
+                return NotFound();
+            }
             var player = await _context.Players.FindAsync(id);
 
             if (player == null || player.Name == null)
@@ -59,13 +60,79 @@ namespace Battleship_APIs.Controllers
 
             var newPlayer = await _context.Players.ToListAsync();
             for (byte i = 0; i < (newGamePlayerList.Count); i++)
-            {                
+            {
                 newPlayer[i].Name = newGamePlayerList[i].Name;
                 newPlayer[i].Team = newGamePlayerList[i].Team;
-                _context.SaveChanges();               
+                _context.SaveChanges();
             }
 
             return Ok("Successfully added");
+        }
+
+        // --------------  Game mechanics   -------------- //
+
+        [HttpPost("shot")]
+        public async Task<ActionResult<Player>> Shot(byte id, byte xAxis, byte yAxis)
+        {
+            Player attackingPlayer = await GetObjectPlayer(id);
+            int attackingTeam = attackingPlayer.Team;
+            var ResponseMessage = "";
+            if (xAxis < 31 && yAxis < 31 && xAxis > 0 && yAxis > 0)
+            {
+                List<Player> attackedPlayers = await _context.Players.Where(attackedPlayer => attackedPlayer.Team != attackingTeam && attackedPlayer.Name != null).ToListAsync();
+                foreach (Player attackedPlayer in attackedPlayers)
+                {
+                    byte attackedGridId = attackedPlayer.UserGridId;
+                    Cell attackedCell = _context.Cells.Where(aC => aC.GridId == attackedGridId && aC.Xaxis == xAxis && aC.Yaxis == yAxis).First();
+                    if (attackedCell.State == 1)
+                    {
+                        Ship attackedShip = Hit(attackingPlayer, attackedCell, attackedPlayer);
+                        ResponseMessage += $"{attackedPlayer.Name} - You hit a ship! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left; ";
+                    }
+                    else
+                    {
+                        Miss(attackingPlayer, attackedCell, attackedPlayer);
+                        ResponseMessage += $"{attackedPlayer.Name} - You either missed or hit an already hit spot!;";
+                    }
+                }
+                return Ok(ResponseMessage);
+            }
+            else return BadRequest("Invalid cell");
+        }
+
+        private void Miss(Player attackingPlayer, Cell attackedCell, Player attackedPlayer)
+        {
+            Grid gridToEdit = _context.Grids.Where(eG => eG.Id == attackingPlayer.ShotGridId).First();
+            Cell cellToEdit = _context.Cells.Where(eC => eC.GridId == gridToEdit.Id && eC.Xaxis == attackedCell.Xaxis && eC.Yaxis == attackedCell.Yaxis).First();
+            if (cellToEdit.State == 2) 
+            {
+                return;
+            }
+            cellToEdit.State = 3;
+            _context.SaveChanges();
+        }
+
+        private Ship Hit(Player attackingPlayer, Cell attackedCell, Player attackedPlayer)
+        {
+            //Attacker
+
+            Grid gridToEdit = _context.Grids.Where(eG => eG.Id == attackingPlayer.ShotGridId).First();
+            Cell cellToEdit = _context.Cells.Where(eC => eC.GridId == gridToEdit.Id && eC.Xaxis == attackedCell.Xaxis && eC.Yaxis == attackedCell.Yaxis).First();
+            Ship attackedShip = _context.Ships.Where(aS => aS.Id == attackedCell.ShipId).First();
+            attackedShip.Hp--;
+            attackingPlayer.Points += 10;
+            if (attackedShip.Hp == 0)
+            {
+                attackingPlayer.Points += 5;
+            }
+            cellToEdit.State = 2;
+
+            //Attacked
+            
+            
+            attackedCell.State = 2;
+            _context.SaveChanges();
+            return attackedShip;
         }
 
         private async Task<ActionResult> resetGame()
@@ -87,14 +154,37 @@ namespace Battleship_APIs.Controllers
         }
 
         private async Task<ActionResult<Cell>> resetPlayersGrids()
-        {     
+        {
             for (byte id = 0; id < 12; id++)
             {
-            var cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
-            cells.ForEach(cell => { cell.State = 0; cell.ShipId = null; });
-            _context.SaveChanges();
+                var cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
+                cells.ForEach(cell => { cell.State = 0; cell.ShipId = null; });
+                _context.SaveChanges();
             }
             return Ok();
+        } 
+
+        //Metodo per prendere il giocatore dal db
+
+        private async Task<Player> GetObjectPlayer(byte id)
+        {
+            try
+            {
+                if (_context.Players == null)
+                {
+                    throw new ArgumentNullException("Player not found");
+                }
+                var player = await _context.Players.FindAsync(id);
+                if (player == null || player.Name == null)
+                {
+                    throw new ArgumentNullException("Player not found, or without a name");
+                }
+                return (player);
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }
