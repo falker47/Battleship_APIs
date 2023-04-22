@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Battleship_APIs.Models;
 using Battleship_APIs.Models.CustomClass;
 using Newtonsoft.Json;
-using NuGet.Protocol.Plugins;
 
 namespace Battleship_APIs.Controllers
 {
@@ -96,7 +95,7 @@ namespace Battleship_APIs.Controllers
             return Ok(ships);
         }
 
-        [HttpPost("createGame")]
+        [HttpPost("postCreateGame")]
         public async Task<ActionResult<Player>> PostPlayer(List<NewGamePlayer> newGamePlayerList)
         {
             await this.ResetGame();
@@ -112,7 +111,7 @@ namespace Battleship_APIs.Controllers
             return Ok("Successfully added");
         }
 
-        [HttpPost("placeShips")]
+        [HttpPost("postPlaceShips")]
         public async Task<ActionResult<Ship>> PlaceShip(PlayerShips playerShips)
         {
             Player player = await _context.Players.Where(player => player.Id == playerShips.PlayerId).FirstAsync();
@@ -137,7 +136,7 @@ namespace Battleship_APIs.Controllers
 
         // --------------  Game mechanics   -------------- //
 
-        [HttpPost("shot")]
+        [HttpPost("postShot")]
         public async Task<ActionResult<Player>> Shot(byte id, byte xAxis, byte yAxis)
         {
             Player attackingPlayer = await GetObjectPlayer(id);
