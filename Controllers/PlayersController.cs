@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Battleship_APIs.Models;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Battleship_APIs.Models.CustomClass;
+using Newtonsoft.Json;
 
 namespace Battleship_APIs.Controllers
 {
@@ -51,6 +52,36 @@ namespace Battleship_APIs.Controllers
                 return NotFound();
             }
             return Ok(player);
+        }
+
+        [HttpGet("getGridByPlayerId/{id}/{gridSize}/{userGridTRUE_shotGridFALSE}")]
+        public async Task<ActionResult<Grid>> GetGrid(byte id, byte gridSize, bool userGridTRUE_shotGridFALSE)
+        {
+            if (gridSize <= 30 && gridSize > 0)
+            {
+                CellMatrix matrix = new CellMatrix();
+                Player player = await GetObjectPlayer(id);
+                if (userGridTRUE_shotGridFALSE)
+                {
+                    matrix.GridId = player.UserGridId;
+                }
+                else if (!userGridTRUE_shotGridFALSE)
+                {
+                    matrix.GridId = player.ShotGridId;
+                }
+                matrix.Cells = new Cell[gridSize, gridSize];
+
+                List<Cell> cells = await _context.Cells.Where(cell => cell.GridId == matrix.GridId && cell.Xaxis <= gridSize && cell.Yaxis <= gridSize).ToListAsync();
+                cells.ForEach(cell =>
+                {
+                    matrix.Cells[cell.Xaxis -1, cell.Yaxis -1] = cell;
+                });                     
+                return Ok(JsonConvert.SerializeObject(matrix));
+            }
+            else 
+            { 
+                return NotFound();
+            }
         }
 
         [HttpGet("getShipsByPlayerId/{id}")]

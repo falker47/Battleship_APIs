@@ -1,5 +1,4 @@
-﻿
-namespace Battleship_APIs.Models
+﻿namespace Battleship_APIs.Models.CustomClass
 {
     public class PlayerShips
     {
