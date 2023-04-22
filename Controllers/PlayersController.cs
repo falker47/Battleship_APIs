@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Battleship_APIs.Models;
 using Battleship_APIs.Models.CustomClass;
 using Newtonsoft.Json;
+using NuGet.Protocol.Plugins;
 
 namespace Battleship_APIs.Controllers
 {
@@ -75,7 +76,7 @@ namespace Battleship_APIs.Controllers
                 cells.ForEach(cell =>
                 {
                     matrix.Cells[cell.Xaxis -1, cell.Yaxis -1] = cell;
-                });                     
+                });
                 return Ok(JsonConvert.SerializeObject(matrix));
             }
             else 
