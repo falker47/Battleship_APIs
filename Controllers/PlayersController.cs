@@ -60,7 +60,7 @@ namespace Battleship_APIs.Controllers
             if (gridSize <= 30 && gridSize > 0)
             {
                 CellMatrix matrix = new CellMatrix();
-                Player player = await GetObjectPlayer(id);
+                Player player = await GetDBPlayer(id);
                 if (userGridTRUE_shotGridFALSE)
                 {
                     matrix.GridId = player.UserGridId;
@@ -95,21 +95,23 @@ namespace Battleship_APIs.Controllers
             return Ok(ships);
         }
 
+        [HttpPost("postCreateGame")]
         public async Task<ActionResult<Player>> PostPlayer(List<NewGamePlayer> newGamePlayerList)
         {
             await this.ResetGame();
 
-            List<Player> newPlayer = await _context.Players.ToListAsync();
+            List<Player> newPlayers = await _context.Players.ToListAsync();
             for (byte i = 0; i < (newGamePlayerList.Count); i++)
             {
-                newPlayer[i].Name = newGamePlayerList[i].Name;
-                newPlayer[i].Team = newGamePlayerList[i].Team;
+                newPlayers[i].Name = newGamePlayerList[i].Name;
+                newPlayers[i].Team = newGamePlayerList[i].Team;
                 _context.SaveChanges();
             }
 
             return Ok("Successfully added");
         }
 
+        [HttpPost("postPlaceShips")]
         public async Task<ActionResult<Ship>> PlaceShip(PlayerShips playerShips)
         {
             Player player = await _context.Players.Where(player => player.Id == playerShips.PlayerId).FirstAsync();
@@ -132,21 +134,19 @@ namespace Battleship_APIs.Controllers
             return Ok("Successfully placed ships");
         }
 
-        // --------------  Game mechanics   -------------- //
-
         [HttpPost("postShot")]
-        public async Task<ActionResult<Player>> Shot(byte id, byte xAxis, byte yAxis)
+        public async Task<ActionResult<Player>> Shot(PlayerShot playerShot)
         {
-            Player attackingPlayer = await GetObjectPlayer(id);
+            Player attackingPlayer = await GetDBPlayer(playerShot.id);
             int attackingTeam = attackingPlayer.Team;
             var ResponseMessage = "";
-            if (xAxis < 31 && yAxis < 31 && xAxis > 0 && yAxis > 0)
+            if (playerShot.xAxis < 31 && playerShot.yAxis < 31 && playerShot.xAxis > 0 && playerShot.yAxis > 0)
             {
                 List<Player> attackedPlayers = await _context.Players.Where(attackedPlayer => attackedPlayer.Team != attackingTeam && attackedPlayer.Name != null).ToListAsync();
                 foreach (Player attackedPlayer in attackedPlayers)
                 {
                     byte attackedGridId = attackedPlayer.UserGridId;
-                    Cell attackedCell = _context.Cells.Where(aC => aC.GridId == attackedGridId && aC.Xaxis == xAxis && aC.Yaxis == yAxis).First();
+                    Cell attackedCell = _context.Cells.Where(aC => aC.GridId == attackedGridId && aC.Xaxis == playerShot.xAxis && aC.Yaxis == playerShot.yAxis).First();
                     if (attackedCell.State == 1)
                     {
                         Ship attackedShip = Hit(attackingPlayer, attackedCell, attackedPlayer);
@@ -192,7 +192,6 @@ namespace Battleship_APIs.Controllers
 
             //Attacked
             
-            
             attackedCell.State = 2;
             _context.SaveChanges();
             return attackedShip;
@@ -207,29 +206,41 @@ namespace Battleship_APIs.Controllers
 
         private async Task<ActionResult> ResetPlayers()
         {
+            try
+            {
             List<Player> players = await _context.Players.ToListAsync();
             players.ForEach(p =>
             {
                 p.Name = null;
             });
             _context.SaveChanges();
+            }
+            catch
+            {
+                throw new ArgumentNullException("Players not found");
+            }
             return Ok();
         }
 
         private async Task<ActionResult<Cell>> ResetPlayersGrids()
-        {     
+        {
+            try
+            {
             for (byte id = 0; id < 12; id++)
             {
             List<Cell> cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
             cells.ForEach(cell => { cell.State = 0; cell.ShipId = null; });
             _context.SaveChanges();
             }
+            }
+            catch 
+            {
+                throw new ArgumentNullException("Cells not found");
+            }
             return Ok();
         } 
 
-        //Metodo per prendere il giocatore dal db
-
-        private async Task<Player> GetObjectPlayer(byte id)
+        private async Task<Player> GetDBPlayer(byte id)
         {
             try
             {
