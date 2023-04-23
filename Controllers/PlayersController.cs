@@ -53,7 +53,7 @@ namespace Battleship_APIs.Controllers
             }
             return Ok(player);
         }
-
+        
         [HttpGet("getGridByPlayerId/{id}/{gridSize}/{userGridTRUE_shotGridFALSE}")]
         public async Task<ActionResult<Grid>> GetGrid(byte id, byte gridSize, bool userGridTRUE_shotGridFALSE)
         {
@@ -95,7 +95,6 @@ namespace Battleship_APIs.Controllers
             return Ok(ships);
         }
 
-        [HttpPost("postCreateGame")]
         public async Task<ActionResult<Player>> PostPlayer(List<NewGamePlayer> newGamePlayerList)
         {
             await this.ResetGame();
@@ -111,7 +110,6 @@ namespace Battleship_APIs.Controllers
             return Ok("Successfully added");
         }
 
-        [HttpPost("postPlaceShips")]
         public async Task<ActionResult<Ship>> PlaceShip(PlayerShips playerShips)
         {
             Player player = await _context.Players.Where(player => player.Id == playerShips.PlayerId).FirstAsync();
