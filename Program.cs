@@ -7,7 +7,19 @@ internal class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         var localConfig = new ConfigurationBuilder().SetBasePath(Environment.CurrentDirectory).AddJsonFile("appsettings.json", true, false).Build();
-        
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(name: "Policy",
+                policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200",
+                                        "https://polite-sky-0deac7e03.3.azurestaticapps.net")
+                            .WithMethods("POST", "GET")
+                            .AllowAnyHeader();
+                });
+        });
+
         builder.Services.AddDbContext<BattleshipDbContext>(options => options.UseSqlServer(localConfig.GetConnectionString("localConnectionString")));
         builder.Services.AddControllers();
         
@@ -23,6 +35,8 @@ internal class Program
         }
 
         app.UseHttpsRedirection();
+
+        app.UseCors();
 
         app.UseAuthorization();
 
