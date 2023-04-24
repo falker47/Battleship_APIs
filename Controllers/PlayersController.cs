@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Battleship_APIs.Models;
 using Battleship_APIs.Models.CustomClass;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Cors;
 
 namespace Battleship_APIs.Controllers
 {
+    [EnableCors("Policy")]
     [Route("api/[controller]")]
     [ApiController]
     public class PlayersController : ControllerBase
@@ -212,6 +214,7 @@ namespace Battleship_APIs.Controllers
             players.ForEach(p =>
             {
                 p.Name = null;
+                p.Points = 0;
             });
             _context.SaveChanges();
             }
