@@ -13,6 +13,7 @@ namespace Battleship_APIs.Controllers
     public class PlayersController : ControllerBase
     {
         private readonly BattleshipDbContext _context;
+        private PostResponse response = new PostResponse();
 
         public PlayersController(BattleshipDbContext context)
         {
@@ -109,8 +110,8 @@ namespace Battleship_APIs.Controllers
                 newPlayers[i].Team = newGamePlayerList[i].Team;
                 _context.SaveChanges();
             }
-
-            return Ok("Successfully added");
+            this.response.log = "Players successfully saved";
+            return Ok(this.response);
         }
 
         [HttpPost("postPlaceShips")]
@@ -133,7 +134,8 @@ namespace Battleship_APIs.Controllers
                 j++;
             });
             _context.SaveChanges();
-            return Ok("Successfully placed ships");
+            this.response.log = "Ships successfully placed";
+            return Ok(this.response);
         }
 
         [HttpPost("postShot")]
@@ -141,7 +143,7 @@ namespace Battleship_APIs.Controllers
         {
             Player attackingPlayer = await GetDBPlayer(playerShot.id);
             int attackingTeam = attackingPlayer.Team;
-            var ResponseMessage = "";
+            var responseMessage = "";
             if (playerShot.xAxis < 31 && playerShot.yAxis < 31 && playerShot.xAxis > 0 && playerShot.yAxis > 0)
             {
                 List<Player> attackedPlayers = await _context.Players.Where(attackedPlayer => attackedPlayer.Team != attackingTeam && attackedPlayer.Name != null).ToListAsync();
@@ -152,17 +154,22 @@ namespace Battleship_APIs.Controllers
                     if (attackedCell.State == 1)
                     {
                         Ship attackedShip = Hit(attackingPlayer, attackedCell, attackedPlayer);
-                        ResponseMessage += $"{attackedPlayer.Name} - You hit a ship! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left; ";
+                        responseMessage += $"{attackingPlayer.Name} - You hit a ship! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left;";
                     }
                     else
                     {
                         Miss(attackingPlayer, attackedCell, attackedPlayer);
-                        ResponseMessage += $"{attackedPlayer.Name} - You either missed or hit an already hit spot!;";
+                        responseMessage += $"{attackingPlayer.Name} - You either missed or hit an already hit spot!;";
                     }
                 }
-                return Ok(ResponseMessage);
+                this.response.log = responseMessage;
+                return Ok(response);
             }
-            else return BadRequest("Invalid cell");
+            else
+            {
+                this.response.log = "Invalid cell";
+                return BadRequest(response);
+            }
         }
 
         private void Miss(Player attackingPlayer, Cell attackedCell, Player attackedPlayer)
