@@ -75,9 +75,11 @@ namespace Battleship_APIs.Controllers
                 matrix.Cells = new Cell[gridSize, gridSize];
 
                 List<Cell> cells = await _context.Cells.Where(cell => cell.GridId == matrix.GridId && cell.Xaxis <= gridSize && cell.Yaxis <= gridSize).ToListAsync();
-                return Ok(JsonConvert.SerializeObject(cells
-                    .OrderBy(cell => cell.Xaxis)
-                    .ThenBy(cell => cell.Yaxis)));
+                cells.ForEach(cell =>
+                {
+                    matrix.Cells[cell.Xaxis - 1, cell.Yaxis - 1] = cell;
+                });
+                return Ok(JsonConvert.SerializeObject(matrix));
             }
             else
             {
