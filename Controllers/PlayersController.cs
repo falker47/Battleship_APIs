@@ -29,7 +29,7 @@ namespace Battleship_APIs.Controllers
             }
             List<Player> players = await _context.Players.ToListAsync();
             List<Player> verifiedPlayers = new List<Player>();
-            
+
             for (int i = 0; i < players.Count; i++)
             {
                 if (players[i].Name == null)
@@ -56,11 +56,11 @@ namespace Battleship_APIs.Controllers
             }
             return Ok(player);
         }
-        
+
         [HttpGet("getGridByPlayerId/{id}/{gridSize}/{userGridTRUE_shotGridFALSE}")]
         public async Task<ActionResult<Grid>> GetGrid(byte id, byte gridSize, bool userGridTRUE_shotGridFALSE)
         {
-            if (gridSize <= 30 && gridSize > 0)
+            if (gridSize < 31 && gridSize > 0)
             {
                 CellMatrix matrix = new CellMatrix();
                 Player player = await GetDBPlayer(id);
@@ -77,12 +77,12 @@ namespace Battleship_APIs.Controllers
                 List<Cell> cells = await _context.Cells.Where(cell => cell.GridId == matrix.GridId && cell.Xaxis <= gridSize && cell.Yaxis <= gridSize).ToListAsync();
                 cells.ForEach(cell =>
                 {
-                    matrix.Cells[cell.Xaxis -1, cell.Yaxis -1] = cell;
+                    matrix.Cells[cell.Xaxis - 1, cell.Yaxis - 1] = cell;
                 });
                 return Ok(JsonConvert.SerializeObject(matrix));
             }
-            else 
-            { 
+            else
+            {
                 return NotFound();
             }
         }
@@ -154,7 +154,15 @@ namespace Battleship_APIs.Controllers
                     if (attackedCell.State == 1)
                     {
                         Ship attackedShip = Hit(attackingPlayer, attackedCell, attackedPlayer);
-                        responseMessage += $"{attackingPlayer.Name} - You hit a ship! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left;";
+                        responseMessage += $"{attackingPlayer.Name} - You hit a ship";
+                        if (attackedShip.Hp == 0)
+                        {
+                            responseMessage += ", and it sank!;";
+                        }
+                        else
+                        {
+                            responseMessage += "!;";
+                        }
                     }
                     else
                     {
@@ -176,7 +184,7 @@ namespace Battleship_APIs.Controllers
         {
             Grid gridToEdit = _context.Grids.Where(eG => eG.Id == attackingPlayer.ShotGridId).First();
             Cell cellToEdit = _context.Cells.Where(eC => eC.GridId == gridToEdit.Id && eC.Xaxis == attackedCell.Xaxis && eC.Yaxis == attackedCell.Yaxis).First();
-            if (cellToEdit.State == 2) 
+            if (cellToEdit.State == 2)
             {
                 return;
             }
@@ -200,7 +208,7 @@ namespace Battleship_APIs.Controllers
             cellToEdit.State = 2;
 
             //Attacked
-            
+
             attackedCell.State = 2;
             _context.SaveChanges();
             return attackedShip;
@@ -217,13 +225,13 @@ namespace Battleship_APIs.Controllers
         {
             try
             {
-            List<Player> players = await _context.Players.ToListAsync();
-            players.ForEach(p =>
-            {
-                p.Name = null;
-                p.Points = 0;
-            });
-            _context.SaveChanges();
+                List<Player> players = await _context.Players.ToListAsync();
+                players.ForEach(p =>
+                {
+                    p.Name = null;
+                    p.Points = 0;
+                });
+                _context.SaveChanges();
             }
             catch
             {
@@ -236,19 +244,19 @@ namespace Battleship_APIs.Controllers
         {
             try
             {
-            for (byte id = 0; id < 12; id++)
-            {
-            List<Cell> cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
-            cells.ForEach(cell => { cell.State = 0; cell.ShipId = null; });
-            _context.SaveChanges();
+                for (byte id = 0; id < 12; id++)
+                {
+                    List<Cell> cells = await _context.Cells.Where(cell => cell.GridId == id).ToListAsync();
+                    cells.ForEach(cell => { cell.State = 0; cell.ShipId = null; });
+                    _context.SaveChanges();
+                }
             }
-            }
-            catch 
+            catch
             {
                 throw new ArgumentNullException("Cells not found");
             }
             return Ok();
-        } 
+        }
 
         private async Task<Player> GetDBPlayer(byte id)
         {
