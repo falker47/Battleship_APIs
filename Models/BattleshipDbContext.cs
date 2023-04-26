@@ -41,6 +41,11 @@ public partial class BattleshipDbContext : DbContext
             entity.Property(e => e.Xaxis).HasColumnName("XAxis");
             entity.Property(e => e.Yaxis).HasColumnName("YAxis");
 
+            entity.HasOne(d => d.Grid).WithMany(p => p.Cells)
+                .HasForeignKey(d => d.GridId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Cell_Grid");
+
             entity.HasOne(d => d.Ship).WithMany(p => p.Cells)
                 .HasForeignKey(d => d.ShipId)
                 .HasConstraintName("FK_Cells_Ships");

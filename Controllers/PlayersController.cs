@@ -154,7 +154,11 @@ namespace Battleship_APIs.Controllers
                     if (attackedCell.State == 1)
                     {
                         Ship attackedShip = Hit(attackingPlayer, attackedCell, attackedPlayer);
-                        responseMessage += $"{attackingPlayer.Name} - You hit a ship! Ship id:{attackedCell.ShipId} with {attackedShip.Hp} HP left;";
+                        responseMessage += $"{attackingPlayer.Name} - You hit a ship!";
+                        if (attackedShip.Hp == 0)
+                        {
+                            responseMessage += $"And it sinked!";
+                        }
                     }
                     else
                     {
