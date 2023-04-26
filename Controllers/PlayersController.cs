@@ -157,7 +157,11 @@ namespace Battleship_APIs.Controllers
                         responseMessage += $"{attackingPlayer.Name} - You hit a ship!";
                         if (attackedShip.Hp == 0)
                         {
-                            responseMessage += $"And it sinked!";
+                            responseMessage += "And it sinked!;";
+                        }
+                        else
+                        {
+                            responseMessage += ";";
                         }
                     }
                     else
