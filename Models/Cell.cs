@@ -17,7 +17,5 @@ public partial class Cell
 
     public byte? ShipId { get; set; }
 
-    public virtual Grid Grid { get; set; } = null!;
-
     public virtual Ship? Ship { get; set; }
 }
